@@ -61,19 +61,21 @@ In a terminal window:
 
 ## Test code structure
 
-Find unit tests in the Mbed OS repository under the `UNITTESTS` folder of each library. We recommend unit test files use an identical directory path as the file under test. This makes it easier to find unit tests for a particular class or a module. For example, if the file you're testing is `some/example/path/ClassName.cpp`, then all the test files are in the `UNITTESTS/some/example/path/ClassName` directory. Each test suite needs to have its own `unittest.cmake` file for test configuration.
+Find unit tests in the Mbed OS repository under the `UNITTESTS` folder of each library. We recommend unit test files use an identical directory path as the file under test. This makes it easier to find unit tests for a particular class or a module. For example, if the file you're testing is `some/example/path/ClassName.cpp`, then all the test files are in the `UNITTESTS/some/example/path/ClassName` directory. Each test suite needs to have its own `CMakeLists.txt` file for test CMake configuration.
 
-All the class stubs should be located in the Mbed OS root directory `UNITTESTS/stubs`. Multiple test suites can use a single stub class, which should follow the naming convention `ClassName_stub.cpp` for the source file and `ClassName_stub.h` for the header file. Use the actual header files for the unit tests, and don't stub headers if possible. The stubbed headers reside in the `UNITTESTS/target_h` directory.
+All the stub sources are grouped into stub libraries `mbed-stubs-rtos`, `mbed-stubs-drivers`, `mbed-stubs-events`, `mbed-stubs-hal`, `mbed-stubs-platform`, `mbed-stubs-storage`, `mbed-stubs-connectivity` and all stub libraries are target linked under `mbed-stubs`. The library unit test suite CMake is expected to link with the required stub library or directly link with mbed-stubs depends on their test cases.
+
+The new stub file should follow the naming convention `ClassName_stub.cpp` for the source file and `ClassName_stub.h` for the header file and add it under respective existing stub library or create their stubs Libary depends on their test cases.
+
+All the Mbed OS headers are grouped into header interface libraries like, `mbed-headers-platform`, `mbed-headers-connectivity`, `mbed-headers-storage`, `mbed-headers-drivers`, `mbed-headers-hal`, `mbed-headers-events`, `mbed-headers-rtos` and stubbed headers reside in the `UNITTESTS/target_h` into  `mbed-headers-base` library and all headers libraries are target linked under `mbed-headers`. The library unit test suite is a link with the required header library or directly link with mbed-headers depends on their test cases.
+
+All the stub libraries and header libraries are defined under `UNITTESTS/stubs/` directory.
 
 ### Test discovery
 
-Registering unit tests to run happens automatically, and the test runner handles registration. However, test files do not automatically  build. Build unit tests with a separate system that searches for unit tests under the `UNITTESTS` directory.
+Registering unit tests to run happens automatically, and the test runner handles registration. However, test suites do not automatically build. 
 
-For the build system to find and build any test suite automatically, include a unit test configuration file named `unittest.cmake` for each unit test suite. This configuration file lists all the source files required for the test build.
-
-### Test names
-
-The build system automatically generates names of test suites. The name is constructed by taking a relative file path from the UNITTESTS directory to the test directory and replacing path separators with dashes. For example, the test suite name for `some/example/path/ClassName.cpp` is `some-example-path-ClassName`. Suite names are used when deciding which test suites to run.
+For the build system to build a unit test by passing `MBED_BUILD_UNITTESTS=ON/OFF` command-line argument which allows to include all the unit test suite directories into the build.
 
 ## Unit testing with Mbed CLI
 
@@ -90,21 +92,15 @@ Please see the [documentation for Google Test](https://github.com/google/googlet
 Create two files in the test directory for each test suite:
 
 - Unit test source file (`test_ClassName.cpp`).
-- Unit test configuration file (`unittest.cmake`).
+- Unit test CMake configuration file (`CMakeLists.txt`).
 
-List all the files required for the build in the `unittest.cmake` file. We recommend you list the file paths relative to the `UNITTESTS` folder. Use the following variables to list the source files and include paths:
-
-- **unittest-includes** - List of header include paths. You can use this to extend or overwrite default paths listed in CMakeLists.txt.
-- **unittest-sources** - List of files under test.
-- **unittest-test-sources** - List of test sources and stubs.
-
-You can also set custom compiler flags and other configurations supported by CMake in `unittest.cmake`.
+List all the required files and libraries for the build in the `CMakeLists.txt` file.
 
 #### Example
 
 With the following steps, you can write a unit test. This example creates dummy classes to be tested, creates and configures unit tests for a class and stubs all external dependencies.
 
-1. Create the following dummy classes in `mbed-os/example`:
+1. Create the following dummy classes header in `mbed-os/example/include/example`:
 
     **MyClass.h**
 
@@ -124,6 +120,23 @@ With the following steps, you can write a unit test. This example creates dummy 
     #endif
     ```
 
+1. Add a new mbed-headers-example interface library: 
+
+   **mbed-os/UNITTESTS/stubs/CMakeLists.txt**
+
+   ```
+   target_include_directories(mbed-headers-example
+    INTERFACE
+        ${MBED_PATH}/example
+        ${MBED_PATH}/example/include
+        ${MBED_PATH}/example/include/example
+    )
+    ```
+
+1. Update the newly created `mbed-headers-example` library into exising target link library of `mbed-headers`.
+
+1. Create the following dummy classes source in `mbed-os/example/source`:
+
     **MyClass.cpp**
 
     ```
@@ -140,60 +153,8 @@ With the following steps, you can write a unit test. This example creates dummy 
     }
     ```
 
-    **OtherClass.h**
-
-    ```
-    #ifndef OTHERCLASS_H_
-    #define OTHERCLASS_H_
-
-    namespace example {
-
-    class OtherClass {
-    public:
-        int otherFunction();
-    };
-
-    }
-
-    #endif
-    ```
-
-    **OtherClass.cpp**
-
-    ```
-    #include "OtherClass.h"
-
-    namespace example {
-
-    int OtherClass::otherFunction() {
-        return 1;
-    }
-
-    }
-    ```
-
-1. Create a directory for MyClass unit tests in `UNITTESTS/example/MyClass`.
-1. Create a configuration file and a source file for MyClass unit tests in `UNITTESTS/example/MyClass`:
-
-    **unittest.cmake**
-
-    ```
-    ## Add here additional test specific include paths
-    set(unittest-includes ${unittest-includes}
-        ../example
-    )
-
-    ## Add here classes under test
-    set(unittest-sources
-        ../example/MyClass.cpp
-    )
-
-    ## Add here test classes and stubs
-    set(unittest-test-sources
-        ${CMAKE_CURRENT_LIST_DIR}/test_MyClass.cpp
-        stubs/OtherClass_stub.cpp
-    )
-    ```
+1. Create a directory for MyClass unit tests in `mbed-os/example/tests/unittests/MyClass`.
+1. Create a source and CMake configuration file for MyClass unit tests in `mbed-os/example/tests/unittests/MyClass`:
 
     **test_MyClass.cpp**
 
@@ -227,23 +188,31 @@ With the following steps, you can write a unit test. This example creates dummy 
     }
     ```
 
-1. Stub all external dependencies. Create the following stub in the Mbed OS root directory `UNITTESTS/stubs`:
-
-    **OtherClass_stub.cpp**
-
+    **CMakeLists.txt**
     ```
-    #include "example/OtherClass.h"
+    set(TEST_NAME myclass-unittest)
 
-    namespace example {
-
-    int OtherClass::otherFunction() {
-        return 0;
-    }
-
-    }
+    add_executable(${TEST_NAME})
+  
+    target_sources(${TEST_NAME}
+        PRIVATE
+            ${MBED_PATH}/example/tests/unittests/MyClass/MyClass.cpp
+            test_MyClass.cpp
+    )
+    
+    target_link_libraries(${TEST_NAME}
+        PRIVATE
+            mbed-headers
+            mbed-stubs            
+            gmock_main
+    )
+    
+    add_test(NAME "${TEST_NAME}" COMMAND ${TEST_NAME})
+    
+    set_tests_properties(${TEST_NAME} PROPERTIES LABELS "example")
     ```
 
-This example does not use any Mbed OS code, but if your unit tests do, then remember to update header stubs in `UNITTESTS/target_h` and source stubs in `UNITTESTS/stubs` with any missing type or function declarations.
+This example does not use any Mbed OS code, but if your unit tests do, then remember to update header stubs in `UNITTESTS/target_h` and stubs sources in `UNITTESTS/stubs` with any missing type or function declarations.
 
 ### Building and running unit tests
 
@@ -253,7 +222,7 @@ Use Mbed CLI to build and run unit tests. For advanced use, you can run CMake an
 
 1. Create a build directory: `mkdir UNITTESTS/build`.
 1. Move to the build directory: `cd UNITTESTS/build`.
-1. Run CMake using a relative path to the `UNITTESTS` folder as the argument. So from `UNITTESTS/build` use `cmake ..`:
+1. Run CMake using a relative path to the `UNITTESTS` folder as the argument. So from `UNITTESTS/build` use `cmake .. -DMBED_BUILD_UNITTESTS=ON`:
    - Add `-g [generator]` if generating files other than Unix Makefiles. For example, for MinGW, use `-g "MinGW Makefiles"`.
    - Add `-DCMAKE_MAKE_PROGRAM=<value>`, `-DCMAKE_CXX_COMPILER=<value>` and `-DCMAKE_C_COMPILER=<value>` to use a specific Make program and compilers.
    - Add `-DCMAKE_BUILD_TYPE=Debug` for a debug build.
