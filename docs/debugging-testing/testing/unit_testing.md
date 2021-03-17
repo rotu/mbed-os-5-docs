@@ -63,11 +63,11 @@ In a terminal window:
 
 Find unit tests in the Mbed OS repository under the `UNITTESTS` folder of each library. We recommend unit test files use an identical directory path as the file under test. This makes it easier to find unit tests for a particular class or a module. For example, if the file you're testing is `some/example/path/ClassName.cpp`, then all the test files are in the `UNITTESTS/some/example/path/ClassName` directory. Each test suite needs to have its own `CMakeLists.txt` file for test CMake configuration.
 
-All the stub sources are grouped into stub libraries `mbed-stubs-rtos`, `mbed-stubs-drivers`, `mbed-stubs-events`, `mbed-stubs-hal`, `mbed-stubs-platform`, `mbed-stubs-storage`, `mbed-stubs-connectivity` and all stub libraries are target linked under `mbed-stubs`. The library unit test suite CMake is expected to link with the required stub library or directly link with mbed-stubs depends on their test cases.
+All the stub sources are built in stub CMake library targets (e.g `mbed-stubs-rtos`) and linked to the `mbed-stubs` CMake target. The CMake target of the library unit under test is expected to link with the required stub libraries or `mbed-stubs` depending on the test case. 
 
-The new stub file should follow the naming convention `ClassName_stub.cpp` for the source file and `ClassName_stub.h` for the header file and add it under respective existing stub library or create their stubs Libary depends on their test cases.
+The new stub file should follow the naming convention `ClassName_stub.cpp` for the source file and `ClassName_stub.h` for the header file. They should be added under their respective existing stub CMake library or create their stubs library depends on their test cases.
 
-All the Mbed OS headers are grouped into header interface libraries like, `mbed-headers-platform`, `mbed-headers-connectivity`, `mbed-headers-storage`, `mbed-headers-drivers`, `mbed-headers-hal`, `mbed-headers-events`, `mbed-headers-rtos` and stubbed headers reside in the `UNITTESTS/target_h` into  `mbed-headers-base` library and all headers libraries are target linked under `mbed-headers`. The library unit test suite is a link with the required header library or directly link with mbed-headers depends on their test cases.
+All the Mbed OS header files are built with CMake `INTERFACE` libraries (e.g`mbed-headers-platform`). Stubbed header files reside in the `UNITTESTS/target_h` and are built with the `mbed-headers-base` CMake library. All CMake libraries containing header files are linked with `mbed-headers`. The CMake target of the library unit under test is expected to link with the required header file libraries or `mbed-headers` depending on the test case. 
 
 All the stub libraries and header libraries are defined under `UNITTESTS/stubs/` directory.
 
@@ -75,7 +75,7 @@ All the stub libraries and header libraries are defined under `UNITTESTS/stubs/`
 
 Registering unit tests to run happens automatically, and the test runner handles registration. However, test suites do not automatically build. 
 
-For the build system to build a unit test by passing `MBED_BUILD_UNITTESTS=ON/OFF` command-line argument which allows to include all the unit test suite directories into the build.
+For the build system to build a unit test, pass the `ON` or `OFF` value to `MBED_BUILD_UNITTESTS` in the command-line to include all the unit test suite directories into the build.
 
 ## Unit testing with Mbed CLI
 
@@ -120,9 +120,9 @@ With the following steps, you can write a unit test. This example creates dummy 
     #endif
     ```
 
-1. Add a new mbed-headers-example interface library: 
+1. Add a new `mbed-headers-example` interface library: 
 
-   **mbed-os/UNITTESTS/stubs/CMakeLists.txt**
+   ### Stub CMake input source file
 
    ```
    target_include_directories(mbed-headers-example
@@ -188,7 +188,7 @@ With the following steps, you can write a unit test. This example creates dummy 
     }
     ```
 
-    **CMakeLists.txt**
+    ### CMake input source file for UUT
     ```
     set(TEST_NAME myclass-unittest)
 
@@ -212,7 +212,7 @@ With the following steps, you can write a unit test. This example creates dummy 
     set_tests_properties(${TEST_NAME} PROPERTIES LABELS "example")
     ```
 
-This example does not use any Mbed OS code, but if your unit tests do, then remember to update header stubs in `UNITTESTS/target_h` and stubs sources in `UNITTESTS/stubs` with any missing type or function declarations.
+This example does not use any Mbed OS code. If your unit tests do, remember to update header stubs in `UNITTESTS/target_h` and stubs sources in `UNITTESTS/stubs` with any missing type or function declarations.
 
 ### Building and running unit tests
 
