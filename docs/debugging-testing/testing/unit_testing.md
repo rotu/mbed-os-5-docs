@@ -61,7 +61,7 @@ In a terminal window:
 
 ## Test code structure
 
-Find unit tests in the Mbed OS repository under the `UNITTESTS` folder of each library. We recommend unit test files use an identical directory path as the file under test. This makes it easier to find unit tests for a particular class or a module. For example, if the file you're testing is `some/example/path/ClassName.cpp`, then all the test files are in the `UNITTESTS/some/example/path/ClassName` directory. Each test suite needs to have its own `CMakeLists.txt` file for test CMake configuration.
+Unit tests in the Mbed OS repository are located in the `UNITTESTS` directory of each library. We recommend unit test files use an identical directory path as the file under test. This makes it easier to find unit tests for a particular class or a module. For example, if the file you're testing is `some/example/path/ClassName.cpp`, then all the test files are in the `UNITTESTS/some/example/path/ClassName` directory. Each test suite needs to have its own `CMakeLists.txt` file for test CMake configuration.
 
 All the stub sources are built in stub CMake library targets (e.g `mbed-stubs-rtos`) and linked to the `mbed-stubs` CMake target. The CMake target of the library unit under test is expected to link with the required stub libraries or `mbed-stubs` depending on the test case. 
 
@@ -70,6 +70,8 @@ The new stub file should follow the naming convention `ClassName_stub.cpp` for t
 All the Mbed OS header files are built with CMake `INTERFACE` libraries (e.g`mbed-headers-platform`). Stubbed header files reside in the `UNITTESTS/target_h` and are built with the `mbed-headers-base` CMake library. All CMake libraries containing header files are linked with `mbed-headers`. The CMake target of the library unit under test is expected to link with the required header file libraries or `mbed-headers` depending on the test case. 
 
 All the stub libraries and header libraries are defined under `UNITTESTS/stubs/` directory.
+
+Libraries for fakes are under `UNITTESTS/stubs/` directory. These provide mock implementations that are meant to replace the stub version that do nothing. Usually these will replace the header files as well as the source files and cannot be used together with their stub equivalents.
 
 ### Test discovery
 
@@ -153,7 +155,7 @@ With the following steps, you can write a unit test. This example creates dummy 
     }
     ```
 
-1. Create a directory for MyClass unit tests in `mbed-os/example/tests/unittests/MyClass`.
+1. Create a directory for MyClass unit tests in `mbed-os/example/tests/UNITTESTS/MyClass`.
 1. Create a source and CMake configuration file for MyClass unit tests in `mbed-os/example/tests/unittests/MyClass`:
 
     **test_MyClass.cpp**
