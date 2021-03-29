@@ -29,7 +29,19 @@ Detailed instructions for supported operating systems are below.
    sudo easy_install pip
    ```
 
-1. Install Gcovr `pip install "gcovr>=4.1"`.
+### Installing dependencies on Debian or Ubuntu
+1. Install the compilation packages to the host:
+    ``
+    sudo apt-get -y install build-essential cmake
+    ``
+1. Install Python and its package manager:
+    ``
+    sudo apt-get -y install python python-setuptools && sudo easy_install pip
+    ``
+1. Install the addition Python package `gcovr` for code coverage report:
+    ``
+    pip install "gcovr>=4.1"
+    ``
 
 ### Installing dependencies on macOS
 
@@ -45,7 +57,10 @@ In a terminal window:
    sudo easy_install pip
    ```
 
-1. Install Gcovr `pip install "gcovr>=4.1"`.
+1. Install the addition Python package `gcovr` for code coverage report:
+    ``
+    pip install "gcovr>=4.1"
+    ``
 1. (Optional) Install GCC with `brew install gcc`.
 
 ### Installing dependencies on Windows
@@ -56,15 +71,18 @@ In a terminal window:
 1. Download CMake binaries from https://cmake.org/download/, and run the installer.
 1. Download Python 2.7 or Python 3 from https://www.python.org/getit/, and run the installer.
 1. Add MinGW, CMake and Python into system PATH.
-1. Install Gcovr `pip install "gcovr>=4.1"`.
+1. Install the addition Python package `gcovr` for code coverage report:
+    ``
+    pip install "gcovr>=4.1"
+    ``
 
 ## Test code structure
 
-Unit tests in the Mbed OS repository are located in the `UNITTESTS` directory of each library. We recommend unit test files use an identical directory path as the file under test. This makes it easier to find unit tests for a particular class or a module. For example, if the file you're testing is `some/example/path/ClassName.cpp`, then all the test files are in the `UNITTESTS/some/example/path/ClassName` directory. Each test suite needs to have its own `CMakeLists.txt` file for test CMake configuration.
+Unit tests are located in the `tests/UNITTESTS` subdirectory of each library. We recommend that unit test files use an identical directory path as the file under test. This makes it easier to find unit tests for a particular class or a module. For example, if the file you are testing is `some/example/path/ClassName.cpp`, then all the test files are in the `UNITTESTS/some/example/path/ClassName` directory. Each test suite needs to have its own `CMakeLists.txt` file for test CMake configuration.
 
-All the stub sources are built in stub CMake library targets (e.g `mbed-stubs-rtos`) and linked to the `mbed-stubs` CMake target. The CMake target of the library unit under test is expected to link with the required stub libraries or `mbed-stubs` in case of requiring multiple stub libraries.
+All the stub source files are built in a stub CMake library targets (e.g `mbed-stubs-rtos`) and linked to the `mbed-stubs` CMake target. The CMake target of the library unit under test is expected to link with the required stub libraries or `mbed-stubs`if it requires multiple stub libraries.
 
-The new stub file should follow the naming convention `ClassName_stub.cpp` for the source file and `ClassName_stub.h` for the header file. They should be added under their respective existing stub CMake library or create their stub library in case of this `ClassName_stub` providing an implementation for an external source that is not part of the Mbed OS source.
+The new stub file should follow the naming convention `<CLASS_NAME>_stub.cpp` for the source file and `<CLASS_NAME>_stub.h` for the header file. They should be built as part of their respective stub CMake library. Alternatively, create a stub library if `<CLASS_NAME>_stub` is an implementation for an external source not part of the Mbed OS.
 
 All the Mbed OS header files are built with CMake `INTERFACE` libraries (e.g`mbed-headers-platform`). Stubbed header files reside in the `UNITTESTS/target_h` and are built with the `mbed-headers-base` CMake library. All CMake libraries containing header files are linked with `mbed-headers`. The CMake target of the library unit under test is expected to link with the required header file libraries or `mbed-headers` in case of requiring multiple header libraries. 
 
@@ -220,7 +238,7 @@ This example does not use any Mbed OS code. If your unit tests do, remember to u
 
 #### Mbed CLI 2
 
-- Mbed CLI 2 is not supporting the `mbed test --unittests` command, please use CMake and a Make command directly.
+- Mbed CLI 2 does not currently support the `mbed test --unittests` command, please use CMake and a Make command directly.
 
 #### Build tests directly with CMake
 
@@ -228,7 +246,7 @@ This example does not use any Mbed OS code. If your unit tests do, remember to u
 1. Move to the build directory: `cd UNITTESTS/build`.
 1. Run CMake using a relative path to the `UNITTESTS` folder as the argument. So from `UNITTESTS/build` use `cmake ..-DMBED_BUILD_UNITTESTS=ON`:
    - Add `-g [generator]` if generating files other than Unix Makefiles. For example, for MinGW, use `-g "MinGW Makefiles"`.
-   - Add `-DCMAKE_MAKE_PROGRAM=<value>`, `-DCMAKE_CXX_COMPILER=<value>` and `-DCMAKE_C_COMPILER=<value>` to use a specific Make programand     compilers.
+   - Add `-DCMAKE_MAKE_PROGRAM=<value>`, `-DCMAKE_CXX_COMPILER=<value>` and `-DCMAKE_C_COMPILER=<value>` to use a specific Make program and compilers.
    - Add `-DCMAKE_BUILD_TYPE=Debug` for a debug build.
    - Add `-DCOVERAGE=True` to add coverage compiler flags.
    - Add `-Dgtest_disable_pthreads=ON` to run in a single thread.
